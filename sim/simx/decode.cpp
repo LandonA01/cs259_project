@@ -1134,7 +1134,6 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
               uint32_t rs1 = ra_base + (m / cfg::a_sub_blocks) * cfg::k_steps + k;
               uint32_t rs2 = rb_base + (k * cfg::n_steps + n) / cfg::b_sub_blocks;
               uint32_t rs3 = rc_base + m * cfg::n_steps + n;
-              uint32_t rs4 = rm_base + m;
               uint32_t uuid_lo_x = (steps << steps_shift) | uuid_lo;
               uint64_t uuid_x = (static_cast<uint64_t>(uuid_hi) << 32) | uuid_lo_x;
               ++steps;

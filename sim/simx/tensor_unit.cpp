@@ -284,7 +284,7 @@ public:
       case TcuType::WMMA:
         delay = 4;
         break;
-      case TcuType::SPMMA: // add a delay similar to WMMA
+      case TcuType::SPMMA: // add a delay similar to WMMA, but less since less operations are done
         delay = 4;
         break;
       default:
