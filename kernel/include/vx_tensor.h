@@ -403,6 +403,71 @@ public:
       fragD.data = {fd0, fd1, fd2, fd3, fd4, fd5, fd6, fd7};
     }
   }
+
+  template <typename FragD, typename FragA, typename FragB, typename FragC>
+  static __attribute__((always_inline)) void spmma_sync(FragD &fragD, const FragA &fragA, const FragB &fragB, const FragC &fragC) {
+    static_assert(FragA::Use == matrix_a, "A must be matrix_a");
+    static_assert(FragB::Use == matrix_b, "B must be matrix_b");
+    static_assert(FragC::Use == accumulator, "C must be accumulator");
+    static_assert(FragD::Use == accumulator, "D must be accumulator");
+    
+    // same register layout as wmma/mma_sync
+
+    register float fa0 __asm__("f0")  = fragA.data[0];
+    register float fa1 __asm__("f1")  = fragA.data[1];
+    register float fa2 __asm__("f2")  = fragA.data[2];
+    register float fa3 __asm__("f3")  = fragA.data[3];
+    register float fa4 __asm__("f4")  = fragA.data[4];
+    register float fa5 __asm__("f5")  = fragA.data[5];
+    register float fa6 __asm__("f6")  = fragA.data[6];
+    register float fa7 __asm__("f7")  = fragA.data[7];
+
+    if constexpr (FragB::NR == 8) {
+      // fragB: mix of caller-saved (f10-f17)
+      register float fb0 __asm__("f10") = fragB.data[0];
+      register float fb1 __asm__("f11") = fragB.data[1];
+      register float fb2 __asm__("f12") = fragB.data[2];
+      register float fb3 __asm__("f13") = fragB.data[3];
+      register float fb4 __asm__("f14") = fragB.data[4];
+      register float fb5 __asm__("f15") = fragB.data[5];
+      register float fb6 __asm__("f16") = fragB.data[6];
+      register float fb7 __asm__("f17") = fragB.data[7];
+
+      // fragC: callee-saved registers (f24-f31)
+      register float fc0 __asm__("f24") = fragC.data[0];
+      register float fc1 __asm__("f25") = fragC.data[1];
+      register float fc2 __asm__("f26") = fragC.data[2];
+      register float fc3 __asm__("f27") = fragC.data[3];
+      register float fc4 __asm__("f28") = fragC.data[4];
+      register float fc5 __asm__("f29") = fragC.data[5];
+      register float fc6 __asm__("f30") = fragC.data[6];
+      register float fc7 __asm__("f31") = fragC.data[7];
+
+      // Force outputs into accumulator registers
+      register float fd0 __asm__("f24");
+      register float fd1 __asm__("f25");
+      register float fd2 __asm__("f26");
+      register float fd3 __asm__("f27");
+      register float fd4 __asm__("f28");
+      register float fd5 __asm__("f29");
+      register float fd6 __asm__("f30");
+      register float fd7 __asm__("f31");
+
+      // spmma instruction: opcode = 0x0B (EXT1), funct3 = 1, funct7 = 2
+      __asm__ volatile (".insn r 0x0B, 1, 2, x%[fmd], x%[fms], x0"
+        : "=f"(fd0), "=f"(fd1), "=f"(fd2), "=f"(fd3), "=f"(fd4), "=f"(fd5), "=f"(fd6), "=f"(fd7)
+        : [fmd]"i"(Ot::id), [fms]"i"(It::id),
+          "f"(fa0), "f"(fa1), "f"(fa2), "f"(fa3), "f"(fa4), "f"(fa5), "f"(fa6), "f"(fa7),
+          "f"(fb0), "f"(fb1), "f"(fb2), "f"(fb3), "f"(fb4), "f"(fb5), "f"(fb6), "f"(fb7),
+          "f"(fc0), "f"(fc1), "f"(fc2), "f"(fc3), "f"(fc4), "f"(fc5), "f"(fc6), "f"(fc7)
+      );
+
+      fragD.data = {fd0, fd1, fd2, fd3, fd4, fd5, fd6, fd7};
+    } else {
+      // just reuse mma if it doesn't work out
+      mma_sync(fragD, fragA, fragB, fragC);
+    }
+  }
 };
 
 } // namespace tensor
