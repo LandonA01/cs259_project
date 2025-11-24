@@ -352,7 +352,7 @@ public:
     __unused(trace_data);
 
     auto fedp = select_FEDP(fmt_s, fmt_d);
-    std::vector<reg_data_t> sparse_data = rs1_data;
+    std::vector<reg_data_t> sparse_data = rs1_data; // look at this btw this is the new a matrix when pruned
     std::vector<reg_data_t> rs4_metadata = prune(sparse_data);
 
     uint32_t a_off = (step_m % cfg::a_sub_blocks) * cfg::a_block_size;
