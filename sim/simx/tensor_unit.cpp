@@ -197,8 +197,8 @@ static PFN_FEDP select_FEDP(uint32_t IT, uint32_t OT) {
 }
 
 // adaptive 2:4 pruning; prioritize pruning zeros, then left to right
-void prune(std::vector<reg_data_t>& rs1_data, std::vector<reg_data_t>& rs4_metadata) {
-  
+std::vector<reg_data_t> prune(std::vector<reg_data_t>& rs1_data) {
+  std::vector<reg_data_t> rs4_metadata;
   auto index = [](uint32_t row, uint32_t k) {
     return row * cfg::tcK + k;
   };
@@ -250,6 +250,7 @@ void prune(std::vector<reg_data_t>& rs1_data, std::vector<reg_data_t>& rs4_metad
     rs4_metadata.push_back(reg_data_t{.u32 = bitmask});
   }
   rs1_data.swap(keptData);
+  return rs4_metadata;
 }
 
 class TensorUnit::Impl {
@@ -345,13 +346,14 @@ public:
             const std::vector<reg_data_t>& rs1_data,
             const std::vector<reg_data_t>& rs2_data,
             const std::vector<reg_data_t>& rs3_data,
-            const std::vector<reg_data_t>& rs4_metadata, // bitmasks!
             std::vector<reg_data_t>& rd_data,
             ExeTraceData* trace_data) {
     __unused(wid);
     __unused(trace_data);
 
     auto fedp = select_FEDP(fmt_s, fmt_d);
+    std::vector<reg_data_t> sparse_data = rs1_data;
+    std::vector<reg_data_t> rs4_metadata = prune(sparse_data);
 
     uint32_t a_off = (step_m % cfg::a_sub_blocks) * cfg::a_block_size;
     uint32_t b_off = (step_n % cfg::b_sub_blocks) * cfg::b_block_size;
@@ -454,8 +456,7 @@ void TensorUnit::spmma(uint32_t wid,
                       const std::vector<reg_data_t>& rs1_data,
                       const std::vector<reg_data_t>& rs2_data,
                       const std::vector<reg_data_t>& rs3_data,
-                      const std::vector<reg_data_t>& rs4_metadata,
                       std::vector<reg_data_t>& rd_data,
                       ExeTraceData* trace_data) {
-  impl_->wmma(wid, fmt_s, fmt_d, step_m, step_n, rs1_data, rs2_data, rs3_data, rd_data, trace_data);
+  impl_->spmma(wid, fmt_s, fmt_d, step_m, step_n, rs1_data, rs2_data, rs3_data, rd_data, trace_data);
 }

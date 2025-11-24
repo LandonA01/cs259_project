@@ -654,6 +654,7 @@ struct IntrTcuArgs {
 inline std::ostream &operator<<(std::ostream &os, const TcuType& type) {
   switch (type) {
   case TcuType::WMMA: os << "WMMA"; break;
+  case TcuType::SPMMA: os << "SPMMA"; break;
   default:
     assert(false);
   }
