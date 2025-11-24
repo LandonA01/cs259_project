@@ -21,6 +21,7 @@ namespace vortex {
 class Core;
 
 op_string_t op_string(TcuType tcu_type, IntrTcuArgs args);
+void prune(std::vector<reg_data_t>& rs1_data, std::vector<reg_data_t>& rs4_metadata)
 
 class TensorUnit : public SimObject<TensorUnit> {
 public:
@@ -60,6 +61,18 @@ public:
 	          const std::vector<reg_data_t>& rs1_data,
 					  const std::vector<reg_data_t>& rs2_data,
 					  const std::vector<reg_data_t>& rs3_data,
+					  std::vector<reg_data_t>& rd_data,
+					  ExeTraceData* trace_data);
+	
+	void spmma(uint32_t wid,
+			 	    uint32_t fmt_s,
+						uint32_t fmt_d,
+			 	    uint32_t step_m,
+						uint32_t step_n,
+	          const std::vector<reg_data_t>& rs1_data,
+					  const std::vector<reg_data_t>& rs2_data,
+					  const std::vector<reg_data_t>& rs3_data,
+					  const std::vector<reg_data_t>& rs4_metadata,
 					  std::vector<reg_data_t>& rd_data,
 					  ExeTraceData* trace_data);
 
